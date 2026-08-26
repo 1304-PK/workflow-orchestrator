@@ -1,0 +1,100 @@
+{
+  "workflows": [
+    {
+      "id": "order-fulfillment",
+      "title": "Order Fulfillment",
+      "description": "Processes customer orders from validation to confirmation.",
+      "jobs": [
+        {
+          "id": "validate-order",
+          "title": "Validate Order",
+          "description": "Verify order details and availability."
+        },
+        {
+          "id": "reserve-inventory",
+          "title": "Reserve Inventory",
+          "description": "Reserve ordered items."
+        },
+        {
+          "id": "process-payment",
+          "title": "Process Payment",
+          "description": "Process the customer payment."
+        },
+        {
+          "id": "create-shipment",
+          "title": "Create Shipment",
+          "description": "Create the shipment and shipping label."
+        },
+        {
+          "id": "send-confirmation",
+          "title": "Send Confirmation",
+          "description": "Send the order confirmation."
+        }
+      ]
+    },
+    {
+      "id": "daily-sales-report",
+      "title": "Daily Sales Report",
+      "description": "Processes and publishes daily sales data.",
+      "jobs": [
+        {
+          "id": "extract-sales-data",
+          "title": "Extract Sales Data",
+          "description": "Collect sales data from sources."
+        },
+        {
+          "id": "validate-clean-data",
+          "title": "Validate Clean Data",
+          "description": "Clean and validate the data."
+        },
+        {
+          "id": "transform-data",
+          "title": "Transform Data",
+          "description": "Calculate sales metrics."
+        },
+        {
+          "id": "generate-report",
+          "title": "Generate Report",
+          "description": "Create the daily sales report."
+        },
+        {
+          "id": "publish-report",
+          "title": "Publish Report",
+          "description": "Publish and share the report."
+        }
+      ]
+    },
+    {
+      "id": "travel-booking",
+      "title": "Travel Booking",
+      "description": "Manages travel bookings from request to itinerary.",
+      "jobs": [
+        {
+          "id": "validate-booking-request",
+          "title": "Validate Booking Request",
+          "description": "Verify traveler and booking details."
+        },
+        {
+          "id": "check-availability",
+          "title": "Check Availability",
+          "description": "Check available travel options."
+        },
+        {
+          "id": "calculate-final-price",
+          "title": "Calculate Final Price",
+          "description": "Calculate the total booking cost."
+        },
+        {
+          "id": "confirm-reservation",
+          "title": "Confirm Reservation",
+          "description": "Confirm the selected reservations."
+        },
+        {
+          "id": "send-itinerary",
+          "title": "Send Itinerary",
+          "description": "Send the booking itinerary."
+        }
+      ]
+    }
+  ]
+}
