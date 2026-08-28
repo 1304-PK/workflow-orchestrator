@@ -7,8 +7,8 @@ function App() {
         <Link className="wordmark" to="/">
           Flow<span>line</span>
         </Link>
-        <Link className="nav-link" to="/workflows">
-          Workflows <span aria-hidden="true">↗</span>
+        <Link className="nav-link" to="/dashboard">
+          Dashboard <span aria-hidden="true">↗</span>
         </Link>
       </nav>
 
