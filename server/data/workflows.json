@@ -1,96 +1,96 @@
 {
   "workflows": [
     {
-      "id": "order-fulfillment",
+      "type": "order_fulfillment",
       "title": "Order Fulfillment",
       "description": "Processes customer orders from validation to confirmation.",
       "jobs": [
         {
-          "id": "validate-order",
+          "type": "validate_order",
           "title": "Validate Order",
           "description": "Verify order details and availability."
         },
         {
-          "id": "reserve-inventory",
+          "type": "reserve_inventory",
           "title": "Reserve Inventory",
           "description": "Reserve ordered items."
         },
         {
-          "id": "process-payment",
+          "type": "process_payment",
           "title": "Process Payment",
           "description": "Process the customer payment."
         },
         {
-          "id": "create-shipment",
+          "type": "create_shipment",
           "title": "Create Shipment",
           "description": "Create the shipment and shipping label."
         },
         {
-          "id": "send-confirmation",
+          "type": "send_confirmation",
           "title": "Send Confirmation",
           "description": "Send the order confirmation."
         }
       ]
     },
     {
-      "id": "daily-sales-report",
+      "type": "daily_sales_report",
       "title": "Daily Sales Report",
       "description": "Processes and publishes daily sales data.",
       "jobs": [
         {
-          "id": "extract-sales-data",
+          "type": "extract_sales_data",
           "title": "Extract Sales Data",
           "description": "Collect sales data from sources."
         },
         {
-          "id": "validate-clean-data",
+          "type": "validate_clean_data",
           "title": "Validate Clean Data",
           "description": "Clean and validate the data."
         },
         {
-          "id": "transform-data",
+          "type": "transform_data",
           "title": "Transform Data",
           "description": "Calculate sales metrics."
         },
         {
-          "id": "generate-report",
+          "type": "generate_report",
           "title": "Generate Report",
           "description": "Create the daily sales report."
         },
         {
-          "id": "publish-report",
+          "type": "publish_report",
           "title": "Publish Report",
           "description": "Publish and share the report."
         }
       ]
     },
     {
-      "id": "travel-booking",
+      "type": "travel_booking",
       "title": "Travel Booking",
       "description": "Manages travel bookings from request to itinerary.",
       "jobs": [
         {
-          "id": "validate-booking-request",
+          "type": "validate_booking_request",
           "title": "Validate Booking Request",
           "description": "Verify traveler and booking details."
         },
         {
-          "id": "check-availability",
+          "type": "check_availability",
           "title": "Check Availability",
           "description": "Check available travel options."
         },
         {
-          "id": "calculate-final-price",
+          "type": "calculate_final_price",
           "title": "Calculate Final Price",
           "description": "Calculate the total booking cost."
         },
         {
-          "id": "confirm-reservation",
+          "type": "confirm_reservation",
           "title": "Confirm Reservation",
           "description": "Confirm the selected reservations."
         },
         {
-          "id": "send-itinerary",
+          "type": "send_itinerary",
           "title": "Send Itinerary",
           "description": "Send the booking itinerary."
         }
