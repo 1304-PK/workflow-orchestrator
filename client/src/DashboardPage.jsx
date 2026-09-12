@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient.js'
 
 function formatResult(result) {
@@ -8,10 +8,43 @@ function formatResult(result) {
 }
 
 function DashboardPage() {
+  const navigate = useNavigate()
   const [workflows, setWorkflows] = useState([])
-  const [selectedWorkflow, setSelectedWorkflow] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
+
+
+
+  async function handleDeleteWorkflow(event, workflow) {
+    event.stopPropagation()
+
+    const shouldDelete = window.confirm(`Delete "${workflow.title}"?`)
+    if (!shouldDelete) return
+
+    const { error: tasksError } = await supabase
+      .from('tasks_queue')
+      .delete()
+      .eq('workflow_id', workflow.id)
+
+    if (tasksError) {
+      setErrorMessage(tasksError.message)
+      return
+    }
+
+    const { error: workflowError } = await supabase
+      .from('workflows')
+      .delete()
+      .eq('id', workflow.id)
+
+    if (workflowError) {
+      setErrorMessage(workflowError.message)
+      return
+    }
+
+    setWorkflows((currentWorkflows) => currentWorkflows.filter((item) => item.id !== workflow.id))
+    setSelectedWorkflow((currentWorkflow) => currentWorkflow?.id === workflow.id ? null : currentWorkflow)
+    setErrorMessage('')
+  }
 
   useEffect(() => {
     async function loadWorkflows() {
@@ -32,9 +65,9 @@ function DashboardPage() {
       if (workflowIds.length > 0) {
         const { data, error: taskError } = await supabase
           .from('tasks_queue')
-          .select('id, workflow_id, task_type, status, result, error, sequence_order')
+          .select('id, workflow_id, task_type, status, result, error')
           .in('workflow_id', workflowIds)
-          .order('sequence_order', { ascending: true })
+          .order('id', { ascending: true })
 
         if (taskError) {
           setErrorMessage(taskError.message)
@@ -59,75 +92,59 @@ function DashboardPage() {
 
     loadWorkflows()
   }, [])
-
   return (
-    <main className="dashboard-page">
-      <nav className="site-nav" aria-label="Primary navigation">
-        <Link className="wordmark" to="/">
-          Flow<span>line</span>
-        </Link>
-        <Link className="nav-link" to="/workflows">
-          Workflows <span aria-hidden="true">↗</span>
-        </Link>
-      </nav>
-
-      <section className="dashboard-heading">
-        <p className="eyebrow">Live operations</p>
-        <h1>Dashboard.</h1>
-      </section>
-
-      <section className="dashboard-content" aria-label="Current workflows">
-        {isLoading && <p className="dashboard-message">Loading workflows...</p>}
-        {!isLoading && errorMessage && <p className="dashboard-message dashboard-message--error">{errorMessage}</p>}
-        {!isLoading && !errorMessage && workflows.length === 0 && <p className="dashboard-message">No current workflows.</p>}
-        {!isLoading && !errorMessage && workflows.length > 0 && (
-          <div className="workflow-dashboard-list">
-            {workflows.map((workflow) => (
-              <button type="button" className="workflow-dashboard-card" key={workflow.id} onClick={() => setSelectedWorkflow(workflow)}>
-                <span className={`status-dot status-dot--${workflow.status?.toLowerCase()}`} />
-                <span className="workflow-dashboard-card__body">
-                  <span className="workflow-dashboard-card__title">{workflow.title}</span>
-                  <span className="workflow-dashboard-card__type">{workflow.type}</span>
-                  <span className="workflow-dashboard-card__description">{workflow.description}</span>
-                </span>
-                <span className="workflow-status">{workflow.status}</span>
-                <span className="workflow-dashboard-card__arrow" aria-hidden="true">↗</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {selectedWorkflow && (
-        <div className="workflow-overlay" role="presentation" onMouseDown={() => setSelectedWorkflow(null)}>
-          <section className="workflow-modal workflow-detail-modal" role="dialog" aria-modal="true" aria-labelledby="workflow-detail-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <p className="eyebrow">Workflow steps</p>
-                <h2 id="workflow-detail-title">{selectedWorkflow.title}</h2>
-                <p className="modal-description">{selectedWorkflow.description}</p>
-              </div>
-              <button type="button" className="close-button" aria-label="Close workflow details" onClick={() => setSelectedWorkflow(null)}>×</button>
-            </div>
-            <div className="task-steps">
-              {selectedWorkflow.tasks.length === 0 && <p className="dashboard-message">No tasks found.</p>}
-              {selectedWorkflow.tasks.map((task, index) => (
-                <article className="task-step" key={task.id}>
-                  <div className="task-step__number">{String(index + 1).padStart(2, '0')}</div>
-                  <div className="task-step__content">
-                    <div className="task-step__heading">
-                      <h3>{task.task_type}</h3>
-                      <span className={`workflow-status workflow-status--${task.status?.toLowerCase()}`}>{task.status}</span>
-                    </div>
-                    {task.status === 'COMPLETED' && task.result != null && <pre className="task-detail">{formatResult(task.result)}</pre>}
-                    {task.status === 'FAILED' && task.error && <p className="task-error">{task.error}</p>}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+    <main className="min-h-screen bg-[#2d3037] p-8 font-sans">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-sm text-gray-400 mb-1">Live operations</p>
+          <h1 className="text-white text-3xl font-bold">Dashboard</h1>
         </div>
-      )}
+        <Link to="/workflows" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold transition-colors">
+          Go to workflows
+        </Link>
+      </div>
+
+      <div className={workflows.length > 0 ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+        {isLoading && <p className="text-white">Loading workflows...</p>}
+        {!isLoading && errorMessage && <p className="text-red-400">{errorMessage}</p>}
+        {!isLoading && !errorMessage && workflows.length === 0 && <p className="text-white">No current workflows.</p>}
+        {!isLoading && !errorMessage && workflows.length > 0 && (
+          workflows.map((workflow) => (
+            <div 
+              key={workflow.id}
+              className="flex flex-col bg-[#21242d] border border-black p-5 text-white rounded-lg gap-4 cursor-pointer hover:border-gray-500 hover:bg-[#252833] transition-all relative group"
+              onClick={() => navigate(`/workflows/status/${workflow.id}`)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`w-3 h-3 rounded-full ${workflow.status?.toLowerCase() === 'completed' ? 'bg-green-500' : workflow.status?.toLowerCase() === 'failed' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                  <span className="text-sm text-gray-400 font-semibold uppercase tracking-wider">{workflow.status}</span>
+                </div>
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-red-500 text-3xl leading-none transition-colors opacity-0 group-hover:opacity-100"
+                  aria-label={`Delete ${workflow.title}`}
+                  title="Delete workflow"
+                  onClick={(event) => handleDeleteWorkflow(event, workflow)}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="flex flex-col flex-1 mt-1">
+                <span className="text-xl font-bold mb-1">{workflow.title}</span>
+                <span className="text-sm text-gray-400 mb-4">{workflow.type}</span>
+                <span className="text-sm text-gray-300 leading-relaxed">{workflow.description}</span>
+              </div>
+              
+              <div className="flex justify-end pt-2">
+                <span className="text-xl text-gray-500 group-hover:text-indigo-400 transition-colors" aria-hidden="true">↗</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
     </main>
   )
 }
