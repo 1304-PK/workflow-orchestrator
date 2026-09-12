@@ -67,22 +67,44 @@ async function completeTask(taskId, result) {
           updated_at = now(),
           error = NULL
       WHERE id = $2
-      RETURNING workflow_id, sequence_order;
+      RETURNING workflow_id;
       `,
       [result, taskId]
     );
 
-    const { workflow_id, sequence_order } = rows[0];
+    const { workflow_id } = rows[0];
 
     await client.query(
       `
-      UPDATE tasks_queue
-      SET status = 'PENDING', updated_at = now()
-      WHERE workflow_id = $1
-        AND sequence_order = $2 + 1
-        AND status = 'WAITING';
-      `,
-      [workflow_id, sequence_order]
+  UPDATE tasks_queue AS task
+  SET status = 'PENDING',
+      payload = task.payload || COALESCE(
+        (
+          SELECT jsonb_object_agg(key, value)
+          FROM tasks_queue AS dependency,
+               jsonb_each(dependency.result)
+          WHERE dependency.workflow_id = task.workflow_id
+            AND dependency.task_type = ANY(task.depends_on)
+            AND dependency.status = 'COMPLETED'
+        ),
+        '{}'::jsonb
+      ),
+      updated_at = now()
+  WHERE task.workflow_id = $1
+    AND task.status = 'WAITING'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM unnest(task.depends_on) AS dependency_type
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM tasks_queue AS dependency
+        WHERE dependency.workflow_id = task.workflow_id
+          AND dependency.task_type = dependency_type
+          AND dependency.status = 'COMPLETED'
+      )
+    );
+  `,
+      [workflow_id]
     );
 
     // if no task exists after this one, the workflow is done
@@ -112,8 +134,13 @@ async function completeTask(taskId, result) {
  * Marks a task as failed and records the error.
  */
 async function failTask(taskId, errorMessage) {
-  await pool.query(
-    `
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const result = await pool.query(
+      `
     UPDATE tasks_queue
     SET status = CASE
       WHEN attempt_count >= max_attempts THEN 'FAILED'::task_status
@@ -123,10 +150,34 @@ async function failTask(taskId, errorMessage) {
         worker_id = NULL,
         lease_expires_at = NULL,
         updated_at = now()
-    WHERE id = $2;
+    WHERE id = $2
+    RETURNING workflow_id, attempt_count, max_attempts;
     `,
-    [errorMessage, taskId]
-  );
+      [errorMessage, taskId]
+    );
+
+    const task = result.rows[0]
+
+    if (task && task.attempt_count >= task.max_attempts) {
+      await client.query(
+        `UPDATE workflows
+      SET
+      status = 'FAILED'::status_enum,
+      updated_at = now()
+      WHERE id = $1
+      `,
+        [task.workflow_id]
+      )
+    }
+
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query("ROLLBACK")
+    throw err
+  } finally {
+    client.release();
+  }
+
 }
 
 module.exports = { claimTask, heartbeat, completeTask, failTask };
