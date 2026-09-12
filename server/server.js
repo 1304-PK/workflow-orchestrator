@@ -2,6 +2,7 @@ const express = require("express")
 
 // Importing routes
 const workflowRouter = require("./routes/workflows.routes")
+const taskRouter = require("./routes/tasks.routes")
 
 const cors = require("cors")
 require("dotenv").config()
@@ -19,7 +20,9 @@ app.use(cors(corsOptions))
 app.use(express.json())
 
 app.use("/api/workflows", workflowRouter)
+app.use("/api/task", taskRouter)
+
 
 app.listen(3000, () => {
-    console.log("server started at port 3000")
+  console.log("Server listening at port 3000")
 })
