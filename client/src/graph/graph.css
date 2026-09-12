@@ -1,0 +1,492 @@
+/* ─── Graph View Page ───────────────────────────────────────── */
+
+.graph-view {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0f14;
+  color: #e2e8f0;
+  font-family: 'Inter', 'Geist', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* ─── Top Navigation Bar ────────────────────────────────────── */
+
+.graph-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(13, 15, 20, 0.95);
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.graph-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.graph-nav__back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.graph-nav__back:hover {
+  color: #94a3b8;
+}
+
+.graph-nav__separator {
+  color: #2d3748;
+  font-size: 16px;
+}
+
+.graph-nav__workflow-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.graph-nav__meta {
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.graph-nav__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #818cf8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.graph-nav__badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #818cf8;
+}
+
+/* ─── Canvas + Inspector Layout ─────────────────────────────── */
+
+.graph-workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.graph-canvas {
+  flex: 1;
+  position: relative;
+}
+
+/* ─── State overlays (loading / error) ──────────────────────── */
+
+.graph-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #4a5568;
+}
+
+.graph-state__spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.graph-state__text {
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.graph-state__error {
+  font-size: 14px;
+  color: #ef4444;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── React Flow overrides ───────────────────────────────────── */
+
+.graph-canvas .react-flow {
+  background: #0d0f14;
+}
+
+.graph-canvas .react-flow__background {
+  --rf-background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.graph-canvas .react-flow__controls {
+  background: #161922;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.graph-canvas .react-flow__controls-button {
+  background: #161922;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  transition: color 0.15s, background 0.15s;
+  width: 32px;
+  height: 32px;
+}
+
+.graph-canvas .react-flow__controls-button:hover {
+  background: #1e2230;
+  color: #e2e8f0;
+}
+
+.graph-canvas .react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+.graph-canvas .react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.graph-canvas .react-flow__minimap {
+  background: #161922 !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.graph-canvas .react-flow__minimap-mask {
+  fill: rgba(13, 15, 20, 0.7) !important;
+}
+
+.graph-canvas .react-flow__minimap-node {
+  fill: #6366f1 !important;
+  opacity: 0.5;
+}
+
+/* Edge styles */
+.graph-canvas .react-flow__edge-path {
+  stroke: rgba(220, 220, 220, 0.4);
+  stroke-width: 1.5;
+}
+
+.graph-canvas .react-flow__edge.selected .react-flow__edge-path,
+.graph-canvas .react-flow__edge:hover .react-flow__edge-path {
+  stroke: rgba(220, 220, 220, 0.8);
+}
+
+.graph-canvas .react-flow__arrowhead {
+  fill: rgba(220, 220, 220, 0.5);
+}
+
+/* Selection box */
+.graph-canvas .react-flow__selection {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* ─── Workflow Node ──────────────────────────────────────────── */
+
+.wf-node {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 220px;
+  height: 56px;
+  padding: 0 16px;
+  background: #161922;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.wf-node:hover {
+  background: #1a1e2a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.wf-node--selected {
+  background: #1a1e2a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), 0 4px 20px rgba(255, 255, 255, 0.15);
+}
+
+.wf-node__icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+  opacity: 0.9;
+  filter: grayscale(0.2);
+}
+
+.wf-node__title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #cbd5e1;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.wf-node--selected .wf-node__title {
+  color: #e2e8f0;
+}
+
+/* React Flow handles */
+.wf-handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: rgba(99, 102, 241, 0.5) !important;
+  border: 1.5px solid #161922 !important;
+  border-radius: 50% !important;
+  transition: background 0.15s !important;
+}
+
+.wf-handle:hover {
+  background: #6366f1 !important;
+}
+
+/* ─── Task Inspector Panel ───────────────────────────────────── */
+
+.task-inspector {
+  width: 0;
+  overflow: hidden;
+  background: #111318;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-inspector--open {
+  width: 340px;
+}
+
+.task-inspector__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.task-inspector__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.task-inspector__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.task-inspector__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.task-inspector__close {
+  background: transparent;
+  border: none;
+  color: #4a5568;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  margin-left: 8px;
+  line-height: 1;
+}
+
+.task-inspector__close:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.task-inspector__body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 340px;
+}
+
+.task-inspector__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-inspector__section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-inspector__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  letter-spacing: 0;
+}
+
+.task-inspector__text {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.task-inspector__code {
+  display: inline-block;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11.5px;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 5px;
+  padding: 4px 9px;
+}
+
+.task-inspector__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 6px 12px;
+  width: fit-content;
+}
+
+.task-inspector__pill strong {
+  color: #e2e8f0;
+}
+
+.task-inspector__muted {
+  font-size: 12px;
+  color: #374151;
+  font-style: italic;
+  margin: 0;
+}
+
+.task-inspector__dep-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-inspector__dep-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+.task-inspector__dep-item code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.task-inspector__dep-arrow {
+  color: #374151;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ─── Fit-view button ────────────────────────────────────────── */
+
+.graph-fit-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: #161922;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.graph-fit-btn:hover {
+  background: #1e2230;
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.12);
+}
