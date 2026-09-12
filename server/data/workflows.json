@@ -8,27 +8,55 @@
         {
           "type": "validate_order",
           "title": "Validate Order",
-          "description": "Verify order details and availability."
+          "description": "Verify order details and availability.",
+          "depends_on": [],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "reserve_inventory",
           "title": "Reserve Inventory",
-          "description": "Reserve ordered items."
+          "description": "Reserve ordered items.",
+          "depends_on": [
+            "validate_order"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "process_payment",
           "title": "Process Payment",
-          "description": "Process the customer payment."
+          "description": "Process the customer payment.",
+          "depends_on": [
+            "reserve_inventory"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "create_shipment",
           "title": "Create Shipment",
-          "description": "Create the shipment and shipping label."
+          "description": "Create the shipment and shipping label.",
+          "depends_on": [
+            "process_payment"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "send_confirmation",
           "title": "Send Confirmation",
-          "description": "Send the order confirmation."
+          "description": "Send the order confirmation.",
+          "depends_on": [
+            "create_shipment"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         }
       ]
     },
@@ -40,27 +68,55 @@
         {
           "type": "extract_sales_data",
           "title": "Extract Sales Data",
-          "description": "Collect sales data from sources."
+          "description": "Collect sales data from sources.",
+          "depends_on": [],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "validate_clean_data",
           "title": "Validate Clean Data",
-          "description": "Clean and validate the data."
+          "description": "Clean and validate the data.",
+          "depends_on": [
+            "extract_sales_data"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "transform_data",
           "title": "Transform Data",
-          "description": "Calculate sales metrics."
+          "description": "Calculate sales metrics.",
+          "depends_on": [
+            "validate_clean_data"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "generate_report",
           "title": "Generate Report",
-          "description": "Create the daily sales report."
+          "description": "Create the daily sales report.",
+          "depends_on": [
+            "transform_data"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "publish_report",
           "title": "Publish Report",
-          "description": "Publish and share the report."
+          "description": "Publish and share the report.",
+          "depends_on": [
+            "generate_report"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         }
       ]
     },
@@ -72,27 +128,465 @@
         {
           "type": "validate_booking_request",
           "title": "Validate Booking Request",
-          "description": "Verify traveler and booking details."
+          "description": "Verify traveler and booking details.",
+          "depends_on": [],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "check_availability",
           "title": "Check Availability",
-          "description": "Check available travel options."
+          "description": "Check available travel options.",
+          "depends_on": [
+            "validate_booking_request"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "calculate_final_price",
           "title": "Calculate Final Price",
-          "description": "Calculate the total booking cost."
+          "description": "Calculate the total booking cost.",
+          "depends_on": [
+            "check_availability"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "confirm_reservation",
           "title": "Confirm Reservation",
-          "description": "Confirm the selected reservations."
+          "description": "Confirm the selected reservations.",
+          "depends_on": [
+            "calculate_final_price"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         },
         {
           "type": "send_itinerary",
           "title": "Send Itinerary",
-          "description": "Send the booking itinerary."
+          "description": "Send the booking itinerary.",
+          "depends_on": [
+            "confirm_reservation"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        }
+      ]
+    },
+    {
+      "type": "customer_onboarding",
+      "title": "Customer Onboarding",
+      "description": "Validates and configures a new customer account through parallel verification and setup tasks.",
+      "jobs": [
+        {
+          "type": "receive_application",
+          "title": "Receive Application",
+          "description": "Receive and register the customer's onboarding application.",
+          "depends_on": [],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "validate_customer_details",
+          "title": "Validate Customer Details",
+          "description": "Validate the customer's submitted personal or business information.",
+          "depends_on": [
+            "receive_application"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "verify_identity",
+          "title": "Verify Identity",
+          "description": "Verify the customer's identity using the provided documentation.",
+          "depends_on": [
+            "receive_application"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "perform_risk_check",
+          "title": "Perform Risk Check",
+          "description": "Perform required risk and eligibility checks.",
+          "depends_on": [
+            "receive_application"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "create_customer_profile",
+          "title": "Create Customer Profile",
+          "description": "Create the customer's profile after their details are validated.",
+          "depends_on": [
+            "validate_customer_details"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "approve_customer",
+          "title": "Approve Customer",
+          "description": "Approve the customer after identity and risk checks are complete.",
+          "depends_on": [
+            "verify_identity",
+            "perform_risk_check"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "configure_account",
+          "title": "Configure Account",
+          "description": "Configure the customer's account after approval and profile creation.",
+          "depends_on": [
+            "create_customer_profile",
+            "approve_customer"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "create_welcome_resources",
+          "title": "Create Welcome Resources",
+          "description": "Prepare welcome materials and onboarding resources for the customer.",
+          "depends_on": [
+            "create_customer_profile"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "send_welcome_email",
+          "title": "Send Welcome Email",
+          "description": "Send a welcome email after the account is configured and resources are ready.",
+          "depends_on": [
+            "configure_account",
+            "create_welcome_resources"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "complete_onboarding",
+          "title": "Complete Onboarding",
+          "description": "Mark the customer's onboarding process as complete.",
+          "depends_on": [
+            "send_welcome_email"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        }
+      ]
+    },
+    {
+      "type": "software_release_pipeline",
+      "title": "Software Release Pipeline",
+      "description": "Builds, tests, scans, and deploys a new release to production through parallel verification and staged rollout.",
+      "jobs": [
+        {
+          "type": "receive_commit",
+          "title": "Receive Commit",
+          "description": "Receive a new commit/merge event from version control.",
+          "depends_on": [],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "checkout_code",
+          "title": "Checkout Code",
+          "description": "Check out the repository at the triggering commit.",
+          "depends_on": [
+            "receive_commit"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "install_dependencies",
+          "title": "Install Dependencies",
+          "description": "Install all backend and frontend dependencies.",
+          "depends_on": [
+            "checkout_code"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "lint_code",
+          "title": "Lint Code",
+          "description": "Run static linting rules across the codebase.",
+          "depends_on": [
+            "install_dependencies"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_unit_tests",
+          "title": "Run Unit Tests",
+          "description": "Execute the unit test suite.",
+          "depends_on": [
+            "install_dependencies"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_static_analysis",
+          "title": "Run Static Analysis",
+          "description": "Run type-checking and static code analysis tools.",
+          "depends_on": [
+            "install_dependencies"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "check_dependency_vulnerabilities",
+          "title": "Check Dependency Vulnerabilities",
+          "description": "Scan installed dependencies for known security vulnerabilities.",
+          "depends_on": [
+            "install_dependencies"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "build_backend_artifact",
+          "title": "Build Backend Artifact",
+          "description": "Compile and package the backend service.",
+          "depends_on": [
+            "lint_code",
+            "run_unit_tests"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "build_frontend_artifact",
+          "title": "Build Frontend Artifact",
+          "description": "Bundle and package the frontend application.",
+          "depends_on": [
+            "lint_code",
+            "run_unit_tests"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_integration_tests",
+          "title": "Run Integration Tests",
+          "description": "Run integration tests against the built backend and frontend artifacts.",
+          "depends_on": [
+            "build_backend_artifact",
+            "build_frontend_artifact"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_security_scan",
+          "title": "Run Security Scan",
+          "description": "Run a security/static application security testing (SAST) scan on the built artifacts.",
+          "depends_on": [
+            "build_backend_artifact",
+            "build_frontend_artifact"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "generate_api_docs",
+          "title": "Generate API Docs",
+          "description": "Auto-generate API documentation from the backend artifact.",
+          "depends_on": [
+            "build_backend_artifact"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "containerize_backend",
+          "title": "Containerize Backend",
+          "description": "Build a container image for the backend service.",
+          "depends_on": [
+            "run_integration_tests",
+            "run_security_scan"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "containerize_frontend",
+          "title": "Containerize Frontend",
+          "description": "Build a container image for the frontend application.",
+          "depends_on": [
+            "run_integration_tests",
+            "run_security_scan"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "push_backend_image",
+          "title": "Push Backend Image",
+          "description": "Push the backend container image to the image registry.",
+          "depends_on": [
+            "containerize_backend"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "push_frontend_image",
+          "title": "Push Frontend Image",
+          "description": "Push the frontend container image to the image registry.",
+          "depends_on": [
+            "containerize_frontend"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "deploy_to_staging_backend",
+          "title": "Deploy Backend to Staging",
+          "description": "Deploy the backend image to the staging environment.",
+          "depends_on": [
+            "push_backend_image"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "deploy_to_staging_frontend",
+          "title": "Deploy Frontend to Staging",
+          "description": "Deploy the frontend image to the staging environment.",
+          "depends_on": [
+            "push_frontend_image"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_e2e_tests",
+          "title": "Run End-to-End Tests",
+          "description": "Run end-to-end tests against the staging environment.",
+          "depends_on": [
+            "deploy_to_staging_backend",
+            "deploy_to_staging_frontend"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_performance_tests",
+          "title": "Run Performance Tests",
+          "description": "Run load and performance tests against the staging environment.",
+          "depends_on": [
+            "deploy_to_staging_backend",
+            "deploy_to_staging_frontend"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "manual_qa_signoff",
+          "title": "Manual QA Signoff",
+          "description": "Gather final QA approval before production release, incorporating test, performance, docs, and vulnerability results.",
+          "depends_on": [
+            "run_e2e_tests",
+            "run_performance_tests",
+            "generate_api_docs",
+            "check_dependency_vulnerabilities"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "deploy_to_production_backend",
+          "title": "Deploy Backend to Production",
+          "description": "Deploy the approved backend image to production.",
+          "depends_on": [
+            "manual_qa_signoff"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "deploy_to_production_frontend",
+          "title": "Deploy Frontend to Production",
+          "description": "Deploy the approved frontend image to production.",
+          "depends_on": [
+            "manual_qa_signoff"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "run_smoke_tests_prod",
+          "title": "Run Production Smoke Tests",
+          "description": "Run smoke tests against the live production deployment.",
+          "depends_on": [
+            "deploy_to_production_backend",
+            "deploy_to_production_frontend"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
+        },
+        {
+          "type": "notify_release_complete",
+          "title": "Notify Release Complete",
+          "description": "Notify the team that the release has been successfully deployed.",
+          "depends_on": [
+            "run_smoke_tests_prod"
+          ],
+          "retry_policy": {
+            "max_attempts": 3
+          }
         }
       ]
     }
