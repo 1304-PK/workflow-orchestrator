@@ -1,130 +1,50 @@
+const getTaskStatus = require("./shared/taskStatus");
+
+// Client must provide: order_id, customer_id, amount, shipping_address
+
 async function validate_order(payload) {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  const success = Math.random() >= 0.3;
-
-  if (!success) {
-    return {
-      success: false,
-      error: "validate_order failed",
-    };
+  const result = await getTaskStatus();
+  console.log("result", result)
+  if (!result) {
+    return { success: false, error: "Order validation failed: invalid or unavailable items" };
   }
-
-  return {
-    success: true,
-    result: {
-      orderId: 10010,
-      valid: true,
-      customerDetailsValid: true,
-      itemsValid: true,
-      validationStatus: "approved",
-    },
-  };
+  return { success: true, result: { order_id: payload.order_id, is_valid: true } };
 }
 
 async function reserve_inventory(payload) {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  const success = Math.random() >= 0.3;
-
-  if (!success) {
-    return {
-      success: false,
-      error: "reserve_inventory failed",
-    };
+  const result = await getTaskStatus();
+  if (!result) {
+    return { success: false, error: "Inventory reservation failed: insufficient stock" };
   }
-
-  return {
-    success: true,
-    result: {
-      orderId: 10010,
-      inventoryReserved: true,
-      reservationId: "RES-78421",
-      reservedItems: "Aeroplane",
-      reservationStatus: "successful",
-    },
-  };
+  // uses payload.order_id, payload.is_valid from validate_order
+  return { success: true, result: { reservation_id: `res_${Date.now()}` } };
 }
 
 async function process_payment(payload) {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  const success = Math.random() >= 0.3;
-
-  if (!success) {
-    return {
-      success: false,
-      error: "process_payment failed",
-    };
+  const result = await getTaskStatus();
+  if (!result) {
+    return { success: false, error: "Payment processing failed: card declined" };
   }
-
-  return {
-    success: true,
-    result: {
-      orderId: 10010,
-      paymentSuccessful: true,
-      paymentId: "PAY-982341",
-      amountCharged: 500,
-      currency: "USD",
-      paymentMethod: "Card",
-      paymentStatus: "completed",
-    },
-  };
+  // uses payload.reservation_id, payload.amount (client-provided)
+  return { success: true, result: { transaction_id: `txn_${Date.now()}` } };
 }
 
 async function create_shipment(payload) {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  const success = Math.random() >= 0.3;
-
-  if (!success) {
-    return {
-      success: false,
-      error: "create_shipment failed",
-    };
+  const result = await getTaskStatus();
+  if (!result) {
+    return { success: false, error: "Shipment creation failed: carrier API error" };
   }
-
-  return {
-    success: true,
-    result: {
-      orderId: 10010,
-      reservationId: 10991,
-      shipmentCreated: true,
-      shipmentId: "SHP-445821",
-      trackingNumber: "TRK-IND-789456",
-      shippingLabelCreated: true,
-      shippingMethod: "Standard",
-      shipmentStatus: "ready_to_ship",
-    },
-  };
+  // uses payload.transaction_id, payload.shipping_address (client-provided)
+  return { success: true, result: { shipment_id: `ship_${Date.now()}`, tracking_number: `TRK${Date.now()}` } };
 }
 
 async function send_confirmation(payload) {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-
-  const success = Math.random() >= 0.3;
-
-  if (!success) {
-    return {
-      success: false,
-      error: "send_confirmation failed",
-    };
+  const result = await getTaskStatus();
+  if (!result) {
+    return { success: false, error: "Confirmation email failed to send" };
   }
-
-  return {
-    success: true,
-    result: {
-      orderId: 10010,
-      confirmationSent: true,
-      notificationId: "NOTIF-8821",
-      deliveryChannel: "email",
-      recipient: "temp@gmail.com",
-      paymentId: 10091,
-      shipmentId: 10010,
-      trackingNumber: 78787878,
-      status: "sent",
-    },
-  };
+  // uses payload.shipment_id, payload.tracking_number
+  return { success: true, result: { email_sent: true } };
 }
 
 module.exports = {
