@@ -2,18 +2,25 @@
 const { claimTask, heartbeat, completeTask, failTask } = require("./workerFunctions.js")
 const crypto = require("crypto")
 
-const order_fulfillment_tasks = require("../tasks/order_fulfillment.js")
+require("dotenv").config()
+
+const TASKS = require("../tasks/index.js")
+
+
+const temptask = require("./temp.js")
 
 const workerId = crypto.randomUUID()
 
+const heartbeatInterval = Number(process.env.HEARTBEAT_INTERVAL_MS) || 15000
+
 const main = async () => {
     console.log(`Worker initiated with id: ${workerId}. Polling...`)
-
-    let task = null;
-
+    
     while (true) {
+        let task = null;
+        let hbInterval = null
         try {
-            task = await claimTask()
+            task = await claimTask(workerId)
 
             if (!task) {
                 console.log("Couldn't find active task.")
@@ -21,18 +28,24 @@ const main = async () => {
                 continue;
             }
 
-            console.log(`Picked up task with task id: ${task.id}`)
+            console.log(`\nPicked up task with task id: ${task.id} and NAME: ${task.task_type}\n`)
 
-            const taskResult = await order_fulfillment_tasks[task.task_type]()
+            hbInterval = setInterval(async () => {
+                await heartbeat(task.id, workerId)
+            }, heartbeatInterval);
+            
+            const result = await TASKS[task.task_type](task.payload)
 
-            if (!taskResult.success) {
-                await failTask(task.id, taskResult.error)
-                console.log(`Task failed with id: ${task.id}`)
-                continue;
+            
+            if (result.success){
+            await completeTask(task.id, JSON.stringify(result.result))
+            console.log(`\nTask completed with id: ${task.id}, NAME: ${task.task_type}\n`)
             }
 
-            await completeTask(task.id, JSON.stringify(taskResult))
-            console.log(`Task completed with id: ${task.id}`)
+            else{
+                await failTask(task.id, result.error)
+                console.log(`Task failed with id: ${task.id}, NAME: ${task.task_type}\n`)
+            }
         }
 
         catch (err) {
@@ -47,6 +60,9 @@ const main = async () => {
                 }
             }
 
+        }
+        finally{
+            clearInterval(hbInterval)
         }
     }
 }
