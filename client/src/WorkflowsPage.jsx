@@ -73,51 +73,56 @@ function WorkflowsPage() {
   }, [])
 
   return (
-    <main className="workflows-page">
-      <nav className="site-nav" aria-label="Primary navigation">
-        <Link className="wordmark" to="/">
-          Flow<span>line</span>
+    <main className="min-h-screen bg-[#2d3037] p-8 font-sans">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-white text-3xl font-bold">Workflows</h1>
+        <Link to="/dashboard" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold transition-colors">
+          Go to dashboard
         </Link>
-        <Link className="nav-link" to="/">
-          Back home <span aria-hidden="true">↗</span>
-        </Link>
-      </nav>
-      <h1>Workflows.</h1>
-      <section className="workflow-list" aria-label="Available workflows">
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {workflows.map((workflow) => (
           <div
-            className="workflow-row"
             key={workflow.type ?? workflow.id ?? workflow.title}
+            className="flex flex-col bg-[#21242d] border border-black p-5 text-white rounded-lg gap-4"
           >
-            <span>{workflow.title}</span>
-            <button
-              type="button"
-              className="create-button"
-              onClick={() => openWorkflowForm(workflow.type)}
-            >
-              Create
-            </button>
+            <div className="flex flex-col flex-1 mt-1">
+              <span className="text-xl font-bold mb-1">{workflow.title}</span>
+              <span className="text-sm text-gray-400 mb-4">{workflow.type}</span>
+              <span className="text-sm text-gray-300 leading-relaxed">{workflow.description}</span>
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t border-gray-700 mt-auto">
+              <button
+                type="button"
+                className="bg-[#f47a3d] text-[#202027] px-6 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity"
+                onClick={() => openWorkflowForm(workflow.type)}
+              >
+                Create
+              </button>
+            </div>
           </div>
         ))}
-      </section>
+      </div>
 
       {isOrderFormOpen && (
-        <div className="workflow-overlay" role="presentation" onMouseDown={() => setIsOrderFormOpen(false)}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="presentation" onMouseDown={() => setIsOrderFormOpen(false)}>
           <section
-            className="workflow-modal"
+            className="bg-[#2d3037] text-white p-6 rounded-lg w-full max-w-2xl border border-black max-h-[90vh] overflow-y-auto"
             role="dialog"
             aria-modal="true"
             aria-labelledby="order-form-title"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <p className="eyebrow">Create workflow</p>
-                <h2 id="order-form-title">Order Fulfillment</h2>
+                <p className="text-sm text-gray-400">Create workflow</p>
+                <h2 id="order-form-title" className="text-2xl font-bold">Order Fulfillment</h2>
               </div>
               <button
                 type="button"
-                className="close-button"
+                className="text-gray-400 hover:text-white text-3xl leading-none"
                 aria-label="Close form"
                 onClick={() => setIsOrderFormOpen(false)}
               >
@@ -125,27 +130,27 @@ function WorkflowsPage() {
               </button>
             </div>
 
-            <form className="workflow-form" onSubmit={submitWorkflow}>
-              <div className="form-row form-row--two">
-                <label>Full name<input name="fullName" value={orderForm.fullName} onChange={handleOrderFormChange} required /></label>
-                <label>Email address<input type="email" name="emailAddress" value={orderForm.emailAddress} onChange={handleOrderFormChange} required /></label>
+            <form className="flex flex-col gap-4" onSubmit={submitWorkflow}>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label className="flex-1 flex flex-col gap-1">Full name<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="fullName" value={orderForm.fullName} onChange={handleOrderFormChange} required /></label>
+                <label className="flex-1 flex flex-col gap-1">Email address<input className="bg-[#21242d] border border-black p-2 rounded text-white" type="email" name="emailAddress" value={orderForm.emailAddress} onChange={handleOrderFormChange} required /></label>
               </div>
-              <div className="form-row form-row--two">
-                <label>Phone number<input type="tel" name="phoneNumber" value={orderForm.phoneNumber} onChange={handleOrderFormChange} required /></label>
-                <label>Recipient name<input name="recipientName" value={orderForm.recipientName} onChange={handleOrderFormChange} required /></label>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label className="flex-1 flex flex-col gap-1">Phone number<input className="bg-[#21242d] border border-black p-2 rounded text-white" type="tel" name="phoneNumber" value={orderForm.phoneNumber} onChange={handleOrderFormChange} required /></label>
+                <label className="flex-1 flex flex-col gap-1">Recipient name<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="recipientName" value={orderForm.recipientName} onChange={handleOrderFormChange} required /></label>
               </div>
-              <div className="form-row form-row--two">
-                <label>Selected products/items<input name="selectedItems" value={orderForm.selectedItems} onChange={handleOrderFormChange} required /></label>
-                <label>Quantity for each item<input name="itemQuantity" value={orderForm.itemQuantity} onChange={handleOrderFormChange} required /></label>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label className="flex-1 flex flex-col gap-1">Selected products/items<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="selectedItems" value={orderForm.selectedItems} onChange={handleOrderFormChange} required /></label>
+                <label className="flex-1 flex flex-col gap-1">Quantity for each item<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="itemQuantity" value={orderForm.itemQuantity} onChange={handleOrderFormChange} required /></label>
               </div>
-              <label>Shipping address<textarea name="shippingAddress" value={orderForm.shippingAddress} onChange={handleOrderFormChange} rows="3" required /></label>
-              <div className="form-row form-row--two">
-                <label>Preferred shipping method<select name="shippingMethod" value={orderForm.shippingMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="standard">Standard</option><option value="express">Express</option></select></label>
-                <label>Payment method<select name="paymentMethod" value={orderForm.paymentMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option></select></label>
+              <label className="flex flex-col gap-1">Shipping address<textarea className="bg-[#21242d] border border-black p-2 rounded text-white" name="shippingAddress" value={orderForm.shippingAddress} onChange={handleOrderFormChange} rows="3" required /></label>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label className="flex-1 flex flex-col gap-1">Preferred shipping method<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="shippingMethod" value={orderForm.shippingMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="standard">Standard</option><option value="express">Express</option></select></label>
+                <label className="flex-1 flex flex-col gap-1">Payment method<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="paymentMethod" value={orderForm.paymentMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option></select></label>
               </div>
-              <label>Secure payment token or payment authorization details<input name="paymentAuthorization" value={orderForm.paymentAuthorization} onChange={handleOrderFormChange} required /></label>
-              <label>Preferred confirmation method (email or SMS)<select name="confirmationMethod" value={orderForm.confirmationMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="email">Email</option><option value="sms">SMS</option></select></label>
-              <button className="submit-button" type="submit">Submit <span aria-hidden="true">→</span></button>
+              <label className="flex flex-col gap-1">Secure payment token or payment authorization details<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="paymentAuthorization" value={orderForm.paymentAuthorization} onChange={handleOrderFormChange} required /></label>
+              <label className="flex flex-col gap-1">Preferred confirmation method (email or SMS)<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="confirmationMethod" value={orderForm.confirmationMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="email">Email</option><option value="sms">SMS</option></select></label>
+              <button className="bg-[#f47a3d] text-[#202027] font-semibold py-3 rounded-md mt-4 hover:opacity-90 transition-opacity" type="submit">Submit <span aria-hidden="true">→</span></button>
             </form>
           </section>
         </div>
