@@ -1,6 +1,8 @@
 require("dotenv").config()
 const { Pool } = require('pg');
 
+const {publishMessage} = require("../lib/redis/publisher")
+
 const pool = new Pool({
   user: 'postgres.lwufoqgmyclrmqkibcay',
   password: String(process.env.SUPABASE_DB_PASS),
@@ -32,7 +34,18 @@ async function claimTask(workerId) {
     [workerId]
   );
 
-  return rows[0] || null;
+  if (rows[0]){
+    const payload = {
+      tasks: [rows[0]],
+      workflow: {}
+    }
+
+    await publishMessage(payload)
+
+    return rows[0]
+  }
+
+  return null
 }
 
 
@@ -67,14 +80,14 @@ async function completeTask(taskId, result) {
           updated_at = now(),
           error = NULL
       WHERE id = $2
-      RETURNING workflow_id;
+      RETURNING *;
       `,
       [result, taskId]
     );
 
     const { workflow_id } = rows[0];
 
-    await client.query(
+    const { rows: unblockedTaskRows } = await client.query(
       `
   UPDATE tasks_queue AS task
   SET status = 'PENDING',
@@ -102,13 +115,14 @@ async function completeTask(taskId, result) {
           AND dependency.task_type = dependency_type
           AND dependency.status = 'COMPLETED'
       )
-    );
+    )
+  RETURNING task.*;
   `,
       [workflow_id]
     );
 
     // if no task exists after this one, the workflow is done
-    await client.query(
+    const { rows: workflowRows } = await client.query(
       `
       UPDATE workflows
       SET status = 'COMPLETED', completed_at = now()
@@ -116,12 +130,21 @@ async function completeTask(taskId, result) {
         AND NOT EXISTS (
           SELECT 1 FROM tasks_queue
           WHERE workflow_id = $1 AND status != 'COMPLETED'
-        );
+          )
+        RETURNING *;
       `,
       [workflow_id]
     );
 
     await client.query('COMMIT');
+
+    const payload = {
+      tasks: [rows[0], ...unblockedTaskRows],
+      workflow: workflowRows[0] || {}
+    }
+
+    await publishMessage(payload)
+
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -151,26 +174,37 @@ async function failTask(taskId, errorMessage) {
         lease_expires_at = NULL,
         updated_at = now()
     WHERE id = $2
-    RETURNING workflow_id, attempt_count, max_attempts;
+    RETURNING *;
     `,
       [errorMessage, taskId]
     );
 
     const task = result.rows[0]
 
+    const changedTasks = [task]
+    let changedWorkflow = {}
+
     if (task && task.attempt_count >= task.max_attempts) {
-      await client.query(
+      const { rows: workflowRows } = await client.query(
         `UPDATE workflows
       SET
       status = 'FAILED'::status_enum,
       updated_at = now()
       WHERE id = $1
+      RETURNING *
       `,
         [task.workflow_id]
       )
+
+      changedWorkflow = workflowRows[0] || {}
     }
 
     await client.query('COMMIT')
+
+    await publishMessage({
+      tasks: changedTasks,
+      workflow: changedWorkflow
+    })
   } catch (err) {
     await client.query("ROLLBACK")
     throw err
