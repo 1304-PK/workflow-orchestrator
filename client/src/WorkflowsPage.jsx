@@ -1,54 +1,58 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const initialOrderForm = {
-  fullName: 'name',
-  emailAddress: 'email@gmail.com',
-  phoneNumber: '9090909090',
-  selectedItems: 'cat',
-  itemQuantity: '100',
-  shippingAddress: 'my island',
-  recipientName: 'mr robot',
-  shippingMethod: 'standard',
-  paymentMethod: 'card',
-  paymentAuthorization: 'idk',
-  confirmationMethod: 'email',
-}
+import { workflowFields, workflowSchemas } from './schemas/workflow.schemas.js'
+import { zodErrorParser } from './util/zodErrorParser.js'
 
 function WorkflowsPage() {
   const [workflows, setWorkflows] = useState([])
-  const [isOrderFormOpen, setIsOrderFormOpen] = useState(false)
-  const [orderForm, setOrderForm] = useState(initialOrderForm)
+  const [selectedWorkflow, setSelectedWorkflow] = useState(null)
+  const [workflowForm, setWorkflowForm] = useState({})
+  const [validationError, setValidationError] = useState('')
 
   function openWorkflowForm(type) {
-    if (type === 'order_fulfillment') {
-      setIsOrderFormOpen(true)
-    }
+    setSelectedWorkflow(workflows.find((workflow) => workflow.type === type) ?? { type, title: type })
+    setWorkflowForm(
+      Object.fromEntries((workflowFields[type] ?? []).map(({ name }) => [name, ''])),
+    )
+    setValidationError('')
   }
 
-  function handleOrderFormChange(event) {
+  function handleWorkflowFormChange(event) {
     const { name, value } = event.target
-    setOrderForm((currentForm) => ({ ...currentForm, [name]: value }))
+    setWorkflowForm((currentForm) => ({ ...currentForm, [name]: value }))
+    setValidationError('')
   }
 
   async function submitWorkflow(event) {
     event.preventDefault()
+    const schema = workflowSchemas[selectedWorkflow.type]
+    const validation = schema?.safeParse(workflowForm)
+
+    if (!validation?.success) {
+      setValidationError(
+        validation
+          ? zodErrorParser(validation.error)
+          : 'This workflow does not have a validation schema.',
+      )
+      return
+    }
 
     try {
-      const response = await fetch('http://localhost:3000/api/workflows/order_fulfillment/start', {
+      const response = await fetch(`http://localhost:3000/api/workflows/${selectedWorkflow.type}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderForm),
+        body: JSON.stringify(workflowForm),
       })
 
       if (response.ok) {
-        setOrderForm(initialOrderForm)
-        setIsOrderFormOpen(false)
+        setWorkflowForm({})
+        setSelectedWorkflow(null)
+        setValidationError('')
       } else {
-        console.error(`Failed to start workflow order_fulfillment: ${response.status}`)
+        console.error(`Failed to start workflow ${selectedWorkflow.type}: ${response.status}`)
       }
     } catch (error) {
-      console.error('Failed to start workflow order_fulfillment:', error)
+      console.error(`Failed to start workflow ${selectedWorkflow.type}:`, error)
     }
   }
 
@@ -106,8 +110,8 @@ function WorkflowsPage() {
         ))}
       </div>
 
-      {isOrderFormOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="presentation" onMouseDown={() => setIsOrderFormOpen(false)}>
+      {selectedWorkflow && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="presentation" onMouseDown={() => setSelectedWorkflow(null)}>
           <section
             className="bg-[#2d3037] text-white p-6 rounded-lg w-full max-w-2xl border border-black max-h-[90vh] overflow-y-auto"
             role="dialog"
@@ -118,38 +122,30 @@ function WorkflowsPage() {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <p className="text-sm text-gray-400">Create workflow</p>
-                <h2 id="order-form-title" className="text-2xl font-bold">Order Fulfillment</h2>
+                <h2 id="order-form-title" className="text-2xl font-bold">{selectedWorkflow.title}</h2>
               </div>
               <button
                 type="button"
                 className="text-gray-400 hover:text-white text-3xl leading-none"
                 aria-label="Close form"
-                onClick={() => setIsOrderFormOpen(false)}
+                onClick={() => setSelectedWorkflow(null)}
               >
                 ×
               </button>
             </div>
 
             <form className="flex flex-col gap-4" onSubmit={submitWorkflow}>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label className="flex-1 flex flex-col gap-1">Full name<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="fullName" value={orderForm.fullName} onChange={handleOrderFormChange} required /></label>
-                <label className="flex-1 flex flex-col gap-1">Email address<input className="bg-[#21242d] border border-black p-2 rounded text-white" type="email" name="emailAddress" value={orderForm.emailAddress} onChange={handleOrderFormChange} required /></label>
-              </div>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label className="flex-1 flex flex-col gap-1">Phone number<input className="bg-[#21242d] border border-black p-2 rounded text-white" type="tel" name="phoneNumber" value={orderForm.phoneNumber} onChange={handleOrderFormChange} required /></label>
-                <label className="flex-1 flex flex-col gap-1">Recipient name<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="recipientName" value={orderForm.recipientName} onChange={handleOrderFormChange} required /></label>
-              </div>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label className="flex-1 flex flex-col gap-1">Selected products/items<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="selectedItems" value={orderForm.selectedItems} onChange={handleOrderFormChange} required /></label>
-                <label className="flex-1 flex flex-col gap-1">Quantity for each item<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="itemQuantity" value={orderForm.itemQuantity} onChange={handleOrderFormChange} required /></label>
-              </div>
-              <label className="flex flex-col gap-1">Shipping address<textarea className="bg-[#21242d] border border-black p-2 rounded text-white" name="shippingAddress" value={orderForm.shippingAddress} onChange={handleOrderFormChange} rows="3" required /></label>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label className="flex-1 flex flex-col gap-1">Preferred shipping method<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="shippingMethod" value={orderForm.shippingMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="standard">Standard</option><option value="express">Express</option></select></label>
-                <label className="flex-1 flex flex-col gap-1">Payment method<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="paymentMethod" value={orderForm.paymentMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="card">Card</option><option value="bank_transfer">Bank transfer</option></select></label>
-              </div>
-              <label className="flex flex-col gap-1">Secure payment token or payment authorization details<input className="bg-[#21242d] border border-black p-2 rounded text-white" name="paymentAuthorization" value={orderForm.paymentAuthorization} onChange={handleOrderFormChange} required /></label>
-              <label className="flex flex-col gap-1">Preferred confirmation method (email or SMS)<select className="bg-[#21242d] border border-black p-2 rounded text-white" name="confirmationMethod" value={orderForm.confirmationMethod} onChange={handleOrderFormChange} required><option value="">Select method</option><option value="email">Email</option><option value="sms">SMS</option></select></label>
+              {workflowFields[selectedWorkflow.type]?.map(({ name, label, type = 'text' }) => (
+                <label key={name} className="flex flex-col gap-1">
+                  {label}
+                  <input className="bg-[#21242d] border border-black p-2 rounded text-white" type={type} name={name} value={workflowForm[name] ?? ''} onChange={handleWorkflowFormChange} />
+                </label>
+              ))}
+              {validationError && (
+                <p className="text-sm text-red-300" role="alert">
+                  {validationError}
+                </p>
+              )}
               <button className="bg-[#f47a3d] text-[#202027] font-semibold py-3 rounded-md mt-4 hover:opacity-90 transition-opacity" type="submit">Submit <span aria-hidden="true">→</span></button>
             </form>
           </section>
