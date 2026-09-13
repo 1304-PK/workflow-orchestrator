@@ -6,6 +6,7 @@ require("dotenv").config()
 
 const TASKS = require("../tasks/index.js")
 
+// const {publishMessage} = require("../lib/redis/publisher.js")
 
 const temptask = require("./temp.js")
 
@@ -21,6 +22,8 @@ const main = async () => {
         let hbInterval = null
         try {
             task = await claimTask(workerId)
+
+            //temp publisher msg
 
             if (!task) {
                 console.log("Couldn't find active task.")
