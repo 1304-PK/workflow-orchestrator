@@ -1,28 +1,29 @@
-const createRedisClient = require("../../conig/redis");
-
-const CHANNEL = "task_event";
+const createRedisClient = require("../../config/redis");
 
 const redisClient = createRedisClient();
 
-async function subscribeToMessages() {
-  await redisClient.connect();
-
-  console.log("Subscriber connected to Redis");
-
-
-  await redisClient.subscribe(CHANNEL, (message) => {
-    try {
-      const payload = JSON.parse(message);
-
-      console.log("Received message:", payload);
-    } catch (error) {
-      console.error("Failed to parse message:", error);
+async function subscribe(callback) {
+  try {
+    if (!redisClient.isReady) {
+      await redisClient.connect();
+      console.log("Subscriber connected to Redis");
     }
-  });
 
-  console.log(`Subscribed to channel: ${CHANNEL}`);
+    await redisClient.subscribe("task_event", (message) => {
+      try {
+        
+        callback(message);
+      } catch (error) {
+        console.error("Failed to process message:", error);
+      }
+    });
+
+    console.log(`Subscribed to channel: task_event}`);
+  } catch (error) {
+    console.error("Subscriber failed:", error);
+  }
 }
 
-subscribeToMessages().catch((error) => {
-  console.error("Subscriber failed:", error);
-}); 
+module.exports = {
+  subscribe
+};
