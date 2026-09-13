@@ -5,6 +5,8 @@ const workflows_data = require("../data/workflows.json")
 
 const workflowDetails = workflows_data.workflows.map(workflow => ({ title: workflow.title, type: workflow.type }))
 
+const {subscribe} = require("../lib/redis/subscriber.js")
+
 const router = express.Router()
 
 router.get("/get-workflow", (req, res) => {
@@ -75,11 +77,6 @@ router.route("/:type/start")
 router.get("/status/:id", async (req, res) => {
     const { id } = req.params
 
-    // Validate that id is a positive integer
-    // if (!id || !/^\d+$/.test(id)) {
-    //     return res.status(400).json({ errMsg: "Invalid workflow ID. Must be a positive integer." })
-    // }
-
     try {
         // Fetch workflow and tasks in parallel
         const [workflowResult, tasksResult] = await Promise.all([
@@ -92,7 +89,7 @@ router.get("/status/:id", async (req, res) => {
                 .from("tasks_queue")
                 .select("*")
                 .eq("workflow_id", id)
-                .order("id", { ascending: true }),
+                .order("id", { ascending: true })
         ])
 
         if (workflowResult.error) {
@@ -110,8 +107,41 @@ router.get("/status/:id", async (req, res) => {
 
         res.status(200).json({
             workflow: workflowResult.data,
-            tasks: tasksResult.data ?? [],
+            tasks: tasksResult.data ?? []
         })
+    } catch (err) {
+        res.status(500).json({ errMsg: err.message })
+    }
+})
+
+router.get("/status/:id/events", async (req, res) => {
+    const { id } = req.params
+
+    
+    
+    
+    try {        
+        // Set SSE Headers
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+    
+        res.flushHeaders()
+    
+        console.log("SSE client connected")
+        
+        // Send initial data to the client
+        // res.write(`data: ${JSON.stringify({
+        //     workflow: workflowResult.data,
+        //     tasks: tasksResult.data ?? [],
+        // })}\n\n`);
+
+        // Subscribe to Redis channel for updates
+        await subscribe((message) => {
+            console.log("Received message from Redis:", message);
+            res.write(`data: ${message}\n\n`);
+        })
+        
     } catch (err) {
         res.status(500).json({ errMsg: err.message })
     }
