@@ -25,7 +25,8 @@ async function claimTask(workerId) {
     WHERE id = (
       SELECT id FROM tasks_queue
       WHERE status = 'PENDING'
-      ORDER BY created_at
+        AND next_attempt_at <= now()
+      ORDER BY next_attempt_at
       FOR UPDATE SKIP LOCKED
       LIMIT 1
     )
@@ -159,8 +160,17 @@ async function completeTask(taskId, result) {
 async function failTask(taskId, errorMessage) {
   const client = await pool.connect()
 
+  // Backoff config from env (in seconds)
+  const baseDelay = Number(process.env.RETRY_BASE_DELAY_SECONDS) || 5
+  const maxDelay  = Number(process.env.RETRY_MAX_DELAY_SECONDS)  || 300
+
   try {
     await client.query('BEGIN')
+
+    /**
+    For the failed task, if attempt_count >= max_attempt THEN fail the task,
+    else update it as PENDING.
+    */
 
     const result = await pool.query(
       `
@@ -172,17 +182,28 @@ async function failTask(taskId, errorMessage) {
         error = $1,
         worker_id = NULL,
         lease_expires_at = NULL,
-        updated_at = now()
+        updated_at = now(),
+        next_attempt_at = CASE
+          WHEN attempt_count >= max_attempts THEN NULL
+          ELSE now() + (
+            LEAST($3::numeric, $4::numeric * POWER(2, attempt_count)) / 2.0
+            * (1 + RANDOM())
+          ) * interval '1 second'
+        END
     WHERE id = $2
     RETURNING *;
     `,
-      [errorMessage, taskId]
+      [errorMessage, taskId, maxDelay, baseDelay]
     );
 
     const task = result.rows[0]
 
     const changedTasks = [task]
     let changedWorkflow = {}
+
+    
+    // If the task is actuall failed by above conditions then mark the workflow failed as well.
+    
 
     if (task && task.attempt_count >= task.max_attempts) {
       const { rows: workflowRows } = await client.query(
@@ -200,6 +221,8 @@ async function failTask(taskId, errorMessage) {
     }
 
     await client.query('COMMIT')
+
+    // Publish message using pub/sub
 
     await publishMessage({
       tasks: changedTasks,
