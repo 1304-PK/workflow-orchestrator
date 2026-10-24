@@ -47,7 +47,8 @@ router.get("/:taskId/retry", async (req, res) => {
             SET
                 status = 'PENDING',
                 error = NULL,
-                attempt_count = 0
+                attempt_count = 0,
+                next_attempt_at = now()
             WHERE id = $1
             `,
             [taskId]
