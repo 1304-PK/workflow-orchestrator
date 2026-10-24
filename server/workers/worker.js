@@ -8,7 +8,7 @@ const TASKS = require("../tasks/index.js")
 
 // const {publishMessage} = require("../lib/redis/publisher.js")
 
-const temptask = require("./temp.js")
+// const temptask = require("./temp.js")
 
 const workerId = crypto.randomUUID()
 
