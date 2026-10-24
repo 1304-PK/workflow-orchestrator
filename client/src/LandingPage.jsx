@@ -47,21 +47,19 @@ export default function LandingPage() {
       {/* Bottom-left info panel */}
       <div className="relative md:absolute md:bottom-[90px] md:left-0 z-20 mt-6 md:mt-0 max-w-[280px] bg-[#2d3037] border-t border-white/10 px-7 py-5">
         <h2 className="text-[15px] font-semibold mb-2.5">
-          Black Lifestyle Lovers.
+          Dependency-aware flows.
         </h2>
         <p className="text-[12.5px] leading-relaxed text-[#9a99a3]">
-          Experience what it feels like drinking your favourite beverage out
-          of our premium, all-black mug that are designed with youth in mind.
+          Trigger each task only when upstream work is complete, keeping execution smooth and predictable.
         </p>
       </div>
 
       {/* Bottom-right info panel with play button */}
       <div className="relative md:absolute md:bottom-[90px] md:right-0 z-20 mt-6 md:mt-0 flex items-center gap-4 max-w-full md:max-w-[340px] bg-[#21242d] border-t border-white/10 px-7 py-5">
         <div>
-          <h2 className="text-[15px] font-semibold mb-2.5">The design.</h2>
+          <h2 className="text-[15px] font-semibold mb-2.5">Retries without friction.</h2>
           <p className="text-[12.5px] leading-relaxed text-[#9a99a3]">
-            Learn more what makes our Black Tumbler unique and different.
-            Let&apos;s watch the video.
+            Recover from failures automatically, rerun steps intelligently, and complete workflows without manual follow-up.
           </p>
         </div>
         <button
@@ -103,10 +101,6 @@ export default function LandingPage() {
         </a>
       </div>
 
-      {/* Bottom-right credit */}
-      <div className="relative md:absolute md:bottom-7 md:right-12 mt-4 md:mt-0 text-[10px] tracking-[1.5px] uppercase text-[#9a99a3]">
-        Credit
-      </div>
     </div>
   );
 }
