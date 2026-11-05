@@ -1,19 +1,32 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { workflowFields, workflowSchemas } from './schemas/workflow.schemas.js'
 import { zodErrorParser } from './util/zodErrorParser.js'
 
 function WorkflowsPage() {
+  const navigate = useNavigate()
+
   const [workflows, setWorkflows] = useState([])
   const [selectedWorkflow, setSelectedWorkflow] = useState(null)
   const [workflowForm, setWorkflowForm] = useState({})
   const [validationError, setValidationError] = useState('')
+  const [idempotencyKey, setIdempotencyKey] = useState(null)
 
   function openWorkflowForm(type) {
     setSelectedWorkflow(workflows.find((workflow) => workflow.type === type) ?? { type, title: type })
     setWorkflowForm(
       Object.fromEntries((workflowFields[type] ?? []).map(({ name }) => [name, ''])),
     )
+    setValidationError('')
+    // Generate a stable key for this form opening. The same key is reused on
+    // any retry/double-submit so the server deduplicates to one workflow.
+    setIdempotencyKey(crypto.randomUUID())
+  }
+
+  function closeWorkflowForm() {
+    setSelectedWorkflow(null)
+    // Discard the key — the next openWorkflowForm call will generate a fresh one.
+    setIdempotencyKey(null)
     setValidationError('')
   }
 
@@ -40,14 +53,17 @@ function WorkflowsPage() {
     try {
       const response = await fetch(`http://localhost:3000/api/workflows/${selectedWorkflow.type}/start`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
         body: JSON.stringify(workflowForm),
       })
 
       if (response.ok) {
-        setWorkflowForm({})
-        setSelectedWorkflow(null)
-        setValidationError('')
+        const data = await response.json()
+        setIdempotencyKey(null)
+        navigate(`/workflows/status/${data.workflow_id}`)
       } else {
         console.error(`Failed to start workflow ${selectedWorkflow.type}: ${response.status}`)
       }
@@ -111,7 +127,7 @@ function WorkflowsPage() {
       </div>
 
       {selectedWorkflow && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="presentation" onMouseDown={() => setSelectedWorkflow(null)}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" role="presentation" onMouseDown={closeWorkflowForm}>
           <section
             className="bg-[#2d3037] text-white p-6 rounded-lg w-full max-w-2xl border border-black max-h-[90vh] overflow-y-auto"
             role="dialog"
@@ -128,7 +144,7 @@ function WorkflowsPage() {
                 type="button"
                 className="text-gray-400 hover:text-white text-3xl leading-none"
                 aria-label="Close form"
-                onClick={() => setSelectedWorkflow(null)}
+                onClick={closeWorkflowForm}
               >
                 ×
               </button>
