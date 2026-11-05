@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PacmanLoader } from "react-spinners"
 import { workflowFields, workflowSchemas } from './schemas/workflow.schemas.js'
 import { zodErrorParser } from './util/zodErrorParser.js'
 
@@ -11,6 +12,7 @@ function WorkflowsPage() {
   const [workflowForm, setWorkflowForm] = useState({})
   const [validationError, setValidationError] = useState('')
   const [idempotencyKey, setIdempotencyKey] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function openWorkflowForm(type) {
     setSelectedWorkflow(workflows.find((workflow) => workflow.type === type) ?? { type, title: type })
@@ -18,6 +20,7 @@ function WorkflowsPage() {
       Object.fromEntries((workflowFields[type] ?? []).map(({ name }) => [name, ''])),
     )
     setValidationError('')
+    setIsSubmitting(false)
     // Generate a stable key for this form opening. The same key is reused on
     // any retry/double-submit so the server deduplicates to one workflow.
     setIdempotencyKey(crypto.randomUUID())
@@ -27,6 +30,7 @@ function WorkflowsPage() {
     setSelectedWorkflow(null)
     // Discard the key — the next openWorkflowForm call will generate a fresh one.
     setIdempotencyKey(null)
+    setIsSubmitting(false)
     setValidationError('')
   }
 
@@ -38,6 +42,8 @@ function WorkflowsPage() {
 
   async function submitWorkflow(event) {
     event.preventDefault()
+    if (isSubmitting) return
+
     const schema = workflowSchemas[selectedWorkflow.type]
     const validation = schema?.safeParse(workflowForm)
 
@@ -49,6 +55,8 @@ function WorkflowsPage() {
       )
       return
     }
+
+    setIsSubmitting(true)
 
     try {
       const response = await fetch(`http://localhost:3000/api/workflows/${selectedWorkflow.type}/start`, {
@@ -66,9 +74,11 @@ function WorkflowsPage() {
         navigate(`/workflows/status/${data.workflow_id}`)
       } else {
         console.error(`Failed to start workflow ${selectedWorkflow.type}: ${response.status}`)
+        setIsSubmitting(false)
       }
     } catch (error) {
       console.error(`Failed to start workflow ${selectedWorkflow.type}:`, error)
+      setIsSubmitting(false)
     }
   }
 
@@ -116,7 +126,7 @@ function WorkflowsPage() {
             <div className="flex justify-end pt-4 border-t border-gray-700 mt-auto">
               <button
                 type="button"
-                className="bg-[#f47a3d] text-[#202027] px-6 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity"
+                className="bg-[#f47a3d] text-[#202027] px-6 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity cursor-pointer"
                 onClick={() => openWorkflowForm(workflow.type)}
               >
                 Create
@@ -142,7 +152,7 @@ function WorkflowsPage() {
               </div>
               <button
                 type="button"
-                className="text-gray-400 hover:text-white text-3xl leading-none"
+                className="text-gray-400 hover:text-white text-3xl leading-none cursor-pointer"
                 aria-label="Close form"
                 onClick={closeWorkflowForm}
               >
@@ -162,7 +172,13 @@ function WorkflowsPage() {
                   {validationError}
                 </p>
               )}
-              <button className="bg-[#f47a3d] text-[#202027] font-semibold py-3 rounded-md mt-4 hover:opacity-90 transition-opacity" type="submit">Submit <span aria-hidden="true">→</span></button>
+              <button
+                className="w-2xs h-12 self-center flex items-center justify-center bg-[#f47a3d] text-[#202027] font-semibold rounded-md mt-4 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <PacmanLoader color="#ffffff" size={12} /> : 'Submit'}
+              </button>
             </form>
           </section>
         </div>
