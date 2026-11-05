@@ -21,7 +21,30 @@ async function startWorkflow(req, res) {
         return res.status(400).json({ errMsg: "Workflow doesn't exist" })
     }
 
+    const idempotencyKey = req.headers["idempotency-key"]
+
+    if (!idempotencyKey) {
+        return res.status(400).json({ errMsg: "Idempotency-Key header is required" })
+    }
+
     try {
+        // Check if a workflow with this key already exists
+        const { data: existing, error: lookupError } = await supabase
+            .from("workflows")
+            .select("id, type, status")
+            .eq("idempotency_key", idempotencyKey)
+            .maybeSingle()
+
+        if (lookupError) throw new Error(lookupError.message)
+
+        if (existing) {
+            return res.status(200).json({
+                msg: `${type} workflow already exists`,
+                workflow_id: existing.id,
+                duplicate: true
+            })
+        }
+
         const current_workflow = workflows_data.workflows.filter(workflow => workflow.type === type)[0]
 
         // Create workflow in database
@@ -32,7 +55,8 @@ async function startWorkflow(req, res) {
                     type: type,
                     title: current_workflow.title,
                     description: current_workflow.description,
-                    payload: JSON.stringify(req.body || {})
+                    payload: JSON.stringify(req.body || {}),
+                    idempotency_key: idempotencyKey
                 }
             ])
             .select()
@@ -40,7 +64,6 @@ async function startWorkflow(req, res) {
         if (error) {
             throw new Error(error.message)
         }
-
 
         // Create jobs related to workflow in database
         const jobs = current_workflow.jobs.map((job, index) => ({
@@ -62,7 +85,7 @@ async function startWorkflow(req, res) {
 
         if (jError) throw new Error(jError.message)
 
-        res.status(200).json({ msg: `${type} workflow created` })
+        res.status(200).json({ msg: `${type} workflow created`, workflow_id: data[0]?.id })
     }
 
     catch (err) {
