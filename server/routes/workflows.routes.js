@@ -13,6 +13,15 @@ router.get("/get-workflow", (req, res) => {
     res.status(200).json(workflowDetails)
 })
 
+router.get("/:type/definition", (req, res) => {
+    const { type } = req.params
+    const workflow = workflows_data.workflows.find(w => w.type === type)
+    if (!workflow) {
+        return res.status(404).json({ errMsg: `Workflow "${type}" not found` })
+    }
+    res.status(200).json(workflow)
+})
+
 async function startWorkflow(req, res) {
     const { type } = req.params
     const workflowTypes = workflowDetails.map(workflow => workflow.type)
