@@ -1,0 +1,35 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  server:
+    build: ./server
+    container_name: server
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - redis
+
+  worker:
+    build: ./server
+    container_name: worker
+    command: npm run worker
+    env_file:
+      - ./server/.env
+    depends_on:
+      - redis
+
+  client:
+    build: ./client
+    container_name: client
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./client/.env
+    depends_on:
+      - server
