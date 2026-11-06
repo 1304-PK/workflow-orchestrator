@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { transformWorkflow } from './graphTransform.js'
-import workflowsData from '../../../server/data/workflows.json'
 
 const TARGET_WORKFLOW_TYPE = 'customer_onboarding'
 
 /**
- * Loads the target workflow from the static workflows.json data file
+ * Loads the target workflow definition from the server API
  * and transforms it into raw (unpositioned) React Flow nodes and edges.
  *
+ * @param {string} [workflowType=TARGET_WORKFLOW_TYPE]
  * @returns {{
  *   workflow: Object | null,
  *   rawNodes: import('@xyflow/react').Node[],
@@ -16,7 +16,7 @@ const TARGET_WORKFLOW_TYPE = 'customer_onboarding'
  *   error: string | null,
  * }}
  */
-export function useWorkflowGraph() {
+export function useWorkflowGraph(workflowType = TARGET_WORKFLOW_TYPE) {
   const [workflow, setWorkflow] = useState(null)
   const [rawNodes, setRawNodes] = useState([])
   const [edges, setEdges] = useState([])
@@ -24,25 +24,38 @@ export function useWorkflowGraph() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    try {
-      const found = workflowsData.workflows.find(
-        (w) => w.type === TARGET_WORKFLOW_TYPE
-      )
+    let isMounted = true
 
-      if (!found) {
-        throw new Error(`Workflow "${TARGET_WORKFLOW_TYPE}" not found`)
+    async function fetchWorkflow() {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetch(`http://localhost:3000/api/workflows/${workflowType}/definition`)
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}))
+          throw new Error(errData.errMsg || `Failed to fetch workflow: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        if (!isMounted) return
+
+        const { nodes, edges } = transformWorkflow(data)
+        setWorkflow(data)
+        setRawNodes(nodes)
+        setEdges(edges)
+      } catch (err) {
+        if (isMounted) setError(err.message)
+      } finally {
+        if (isMounted) setIsLoading(false)
       }
-
-      const { nodes, edges } = transformWorkflow(found)
-      setWorkflow(found)
-      setRawNodes(nodes)
-      setEdges(edges)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
     }
-  }, [])
+
+    fetchWorkflow()
+
+    return () => {
+      isMounted = false
+    }
+  }, [workflowType])
 
   return { workflow, rawNodes, edges, isLoading, error }
 }
